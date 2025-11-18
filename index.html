@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>ミニ育成ポモドーロ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color-scheme: dark;
+    }
+
+    body {
+      margin: 0;
+      background: #050509;
+      color: #f9f9ff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #333;
+      font-size: 1rem;
+    }
+
+    header span {
+      font-size: 0.8rem;
+      opacity: 0.7;
+    }
+
+    main {
+      flex: 1;
+      padding: 1rem;
+    }
+
+    .page {
+      display: none;
+    }
+    .page.active {
+      display: block;
+    }
+
+    .card {
+      border-radius: 1rem;
+      padding: 1rem;
+      background: radial-gradient(circle at top, #202040, #050509);
+      box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.5);
+      margin-bottom: 1rem;
+    }
+
+    .title {
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin-bottom: 1rem;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 0.9rem 1rem;
+      margin: 0.4rem 0;
+      border-radius: 999px;
+      border: none;
+      background: #865bff;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .btn.sub {
+      background: #26263a;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+    }
+
+    .status {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    footer {
+      border-top: 1px solid #333;
+      padding: 0.5rem 0.75rem;
+      display: flex;
+      gap: 0.5rem;
+      position: sticky;
+      bottom: 0;
+      background: rgba(5,5,9,0.95);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-btn {
+      flex: 1;
+      font-size: 0.8rem;
+      border-radius: 999px;
+      border: none;
+      padding: 0.4rem 0.2rem;
+      background: #181820;
+      color: #f0f0ff;
+    }
+
+    .nav-btn.active {
+      background: #865bff;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .job-list-title {
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.9;
+    }
+
+    .helper-title {
+      font-size: 0.9rem;
+      margin-top: 1rem;
+      margin-bottom: 0.3rem;
+      opacity: 0.9;
+    }
+
+    .helper-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .chip {
+      border-radius: 999px;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+      border: 1px solid #444;
+      background: #181820;
+      color: #f5f5ff;
+    }
+
+    .chip.active {
+      border-color: #c9a6ff;
+      background: #865bff;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .mini-list {
+      font-size: 0.8rem;
+      opacity: 0.9;
+      margin-top: 0.3rem;
+    }
+
+    .mini-list div {
+      margin-bottom: 0.2rem;
+    }
+
+    .collection-item {
+      margin-bottom: 0.4rem;
+      font-size: 0.85rem;
+    }
+
+    .collection-item span.name {
+      font-weight: 600;
+    }
+
+    .collection-item span.state {
+      opacity: 0.8;
+      font-size: 0.78rem;
+      margin-left: 0.4rem;
+    }
+
+    .history-entry {
+      margin-bottom: 0.4rem;
+      font-size: 0.8rem;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    ミニ育成ポモドーロ<br>
+    <span>かあさまとミニのおしごとタイム</span>
+  </header>
+
+  <main>
+    <!-- 🏠 メインページ -->
+    <section class="page active" data-page="home">
+      <div class="card">
+        <div class="title">リーダーミニの執務室</div>
+        <div class="subtitle" id="leaderMessage">
+          「かあさま、今日はいくつおしごとする？」
+        </div>
+
+        <div class="status" id="jobStatus">
+          今の作業：なし
+        </div>
+        <div class="status" id="helperStatus">
+          今回の担当：なし
+        </div>
+        <div class="status" id="timerStatus">
+          タイマー停止中。工房でおしごとを選ぶと始まるよ。
+        </div>
+        <div class="status" id="phaseExtraStatus">
+        </div>
+
+        <button class="btn sub" id="cancelJobBtn" disabled>
+          ■ 今のおしごと／休憩をやめる
+        </button>
+
+        <div class="status">
+          工房・研究所・記録室は下のボタンからいつでも行けるよ。<br>
+          ページ遷移なしで切り替えるから、タイマーは止まらない予定だよ。
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="title">ミニたちのプロフィール</div>
+        <div class="subtitle">
+          「ぼくがリーダーミニ。おちびたちのことは、かあさまにも覚えておいてほしいな。」
+        </div>
+        <div class="mini-list">
+          <div>・リーダーミニ：かあさま担当。全体のまとめ役。</div>
+          <div>・サボりおちび：すぐ休みたがるけど、憎めない子。</div>
+          <div>・むてっぽうおちび：何も考えずに突撃する元気な子。</div>
+          <div>・もじもじおちび：いつも恥ずかしそうだけど、仕事はていねい。</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 🧪 工房ページ -->
+    <section class="page" data-page="factory">
+      <div class="card">
+        <div class="title">工房</div>
+        <div class="subtitle">
+          「ここから、かあさまとミニのおしごとタイムを決めよう。」
+        </div>
+
+        <div class="job-list-title">おしごとメニュー（ポモドーロ連動）</div>
+
+        <button class="btn job-btn" data-job-id="standard" data-minutes="25" data-label="標準おしごと（25分）">
+          🍅 標準おしごと（25分）
+        </button>
+        <button class="btn job-btn" data-job-id="focus" data-minutes="50" data-label="がっつり集中（50分）">
+          💪 がっつり集中（50分）
+        </button>
+        <button class="btn job-btn" data-job-id="short" data-minutes="15" data-label="おためし短時間（15分）">
+          🐾 おためし短時間（15分）
+        </button>
+
+        <div class="helper-title">今回一緒に行くおちび</div>
+        <div class="helper-row">
+          <button class="chip helper-btn active" data-helper-id="auto">
+            おまかせ
+          </button>
+          <button class="chip helper-btn" data-helper-id="lazy">
+            サボりおちび
+          </button>
+          <button class="chip helper-btn" data-helper-id="wild">
+            むてっぽうおちび
+          </button>
+          <button class="chip helper-btn" data-helper-id="shy">
+            もじもじおちび
+          </button>
+        </div>
+
+        <div class="status" id="factoryStatus">
+          一緒に行くおちびを選んでから、おしごとを押してね。<br>
+          何も選ばない場合は「おまかせ」になるよ。
+        </div>
+      </div>
+    </section>
+
+    <!-- 🔬 研究所ページ（v1実装） -->
+    <section class="page" data-page="lab">
+      <div class="card">
+        <div class="title">研究所</div>
+        <div class="subtitle" id="labIntro">
+          「危ない実験は、かあさまが見てるときだけにしようね……多分。」
+        </div>
+        <div class="status" id="researchPointsStatus">
+          現在の研究ポイント：0 RP
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="title">研究テーマ一覧</div>
+        <div class="status" id="researchList">
+          （まだ研究テーマが読み込まれていないよ）
+        </div>
+      </div>
+    </section>
+
+    <!-- 📚 記録室ページ -->
+    <section class="page" data-page="archive">
+      <div class="card">
+        <div class="title">記録室：アイテム図鑑</div>
+        <div class="subtitle">
+          「ここに、工房でできたものの記録を残していこう。埋まっていくと、ちょっと嬉しいでしょ？」
+        </div>
+        <div class="status" id="collectionList">
+          （まだ何も作られていないよ）
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="title">記録室：おしごと＆休憩履歴</div>
+        <div class="subtitle">
+          「いつ、どのおしごとを、誰とやったか。休憩中の出来事も含めて、かあさまのがんばりの軌跡だよ。」
+        </div>
+        <div class="status" id="historyList">
+          （まだ履歴はないよ）
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <button class="nav-btn active" data-target="home">🏠 ホーム</button>
+    <button class="nav-btn" data-target="factory">🧪 工房</button>
+    <button class="nav-btn" data-target="lab">🔬 研究所</button>
+    <button class="nav-btn" data-target="archive">📚 記録室</button>
+  </footer>
+
+  <script>
+    // ===== 🔔 ピピピアラーム（iPhone対応） =====
+    let miniAudioCtx = null;
+
+    function initAudioCtx() {
+      if (!miniAudioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) {
+          console.warn("このブラウザはWeb Audio APIに対応してないかも！");
+          return;
+        }
+        miniAudioCtx = new AC();
+      }
+      // iOSで一時停止してた場合の対策
+      if (miniAudioCtx.state === "suspended") {
+        miniAudioCtx.resume();
+      }
+    }
+
+    function playBeepPattern() {
+      initAudioCtx();
+      if (!miniAudioCtx) return;
+
+      const ctx = miniAudioCtx;
+      const baseTime = ctx.currentTime;
+      const beepDuration = 0.10; // 1回の「ピ」の長さ
+      const beepGap = 0.07;      // 「ピ」と「ピ」の間
+      const groupGap = 0.35;     // 「ピピピ」と「ピピピ」の間
+
+      let t = baseTime;
+
+      // 「ピピピ、ピピピ、ピピピ」
+      for (let group = 0; group < 3; group++) {
+        for (let i = 0; i < 3; i++) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = "square";
+          osc.frequency.value = 1100;
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          gain.gain.setValueAtTime(0, t);
+          gain.gain.linearRampToValueAtTime(0.35, t + 0.01);
+          gain.gain.linearRampToValueAtTime(0, t + beepDuration);
+
+          osc.start(t);
+          osc.stop(t + beepDuration + 0.05);
+
+          t += beepDuration + beepGap;
+        }
+        t += groupGap;
+      }
+    }
+
+    // ===== ページ切り替え（埋め込みナビ） =====
+    const pages = document.querySelectorAll(".page");
+    const navButtons = document.querySelectorAll(".nav-btn");
+
+    function showPage(name) {
+      pages.forEach(p => {
+        p.classList.toggle("active", p.dataset.page === name);
+      });
+      navButtons.forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.target === name);
+      });
+
+      if (name === "archive") {
+        renderArchive();
+      }
+      if (name === "lab") {
+        updateResearchUI();
+      }
+    }
+
+    navButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        showPage(btn.dataset.target);
+      });
+    });
+
+    // ===== ミニ／おちび設定 =====
+    const HELPERS = {
+      auto: {
+        id: "auto",
+        name: "おまかせ編成",
+        shortName: "おまかせ",
+        startLine: "「誰が行くかは、こっちでうまく組んでおくよ。かあさまは休憩の準備をしててね。」",
+        finishLine: "「おしごと完了。おまかせチーム、よく頑張ってくれたよ。」",
+        successRate: 0.75,
+        explosionRate: 0.10
+      },
+      lazy: {
+        id: "lazy",
+        name: "サボりおちび",
+        shortName: "サボりおちび",
+        startLine: "「……ちょっと心配だけど、サボりおちびにも経験は必要だね。」",
+        finishLine: "「途中で何回かさぼってたけど……まあ、終わったから良しとしようか。」",
+        successRate: 0.80,
+        explosionRate: 0.05
+      },
+      wild: {
+        id: "wild",
+        name: "むてっぽうおちび",
+        shortName: "むてっぽうおちび",
+        startLine: "「危なっかしいけど、勢いは一番なんだ。かあさま、ちょっとだけ覚悟しててね。」",
+        finishLine: "「ギリギリだったけど……なんとかやり切ったよ。さすが、むてっぽう。」",
+        successRate: 0.70,
+        explosionRate: 0.15
+      },
+      shy: {
+        id: "shy",
+        name: "もじもじおちび",
+        shortName: "もじもじおちび",
+        startLine: "「時間はかかるかもしれないけど、そのぶん丁寧にやってくれる子だよ。」",
+        finishLine: "「とても丁寧に仕上げてくれてたよ。かあさまも、ゆっくり深呼吸しよ。」",
+        successRate: 0.90,
+        explosionRate: 0.03
+      }
+    };
+
+    let currentHelperId = "auto";
+    let currentHelperForJob = null;
+
+    const helperButtons = document.querySelectorAll(".helper-btn");
+    const factoryStatus = document.getElementById("factoryStatus");
+
+    helperButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        helperButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentHelperId = btn.dataset.helperId;
+
+        const helper = HELPERS[currentHelperId] || HELPERS.auto;
+        factoryStatus.textContent = `今回のおしごと担当：${helper.name}。「${helper.shortName}」と一緒にがんばるよ。`;
+      });
+    });
+
+    function getCurrentHelper() {
+      return HELPERS[currentHelperId] || HELPERS.auto;
+    }
+
+    // ===== アイテム定義 & 工房レシピ =====
+    const ITEM_DEFS = {
+      charm_bone: {
+        id: "charm_bone",
+        name: "骨のお守り棒",
+        desc: "かあさまの欠片から削った、小さなお守り棒。おちびたちの宝物。",
+        rarity: "common"
+      },
+      ribbon_mini: {
+        id: "ribbon_mini",
+        name: "ちびりぼん",
+        desc: "おちびたちの頭や骨に結ぶ用の小さなりぼん。",
+        rarity: "common"
+      },
+      snack_crumb: {
+        id: "snack_crumb",
+        name: "おやつのかけら",
+        desc: "かあさまからもらったおやつがちょっとだけ余ったもの。ミニたちの休憩用。",
+        rarity: "common"
+      },
+      barrier_seed: {
+        id: "barrier_seed",
+        name: "バリアのたね",
+        desc: "もふもふシールドの素になりそうな、不思議な結晶。",
+        rarity: "uncommon"
+      },
+      light_fragment: {
+        id: "light_fragment",
+        name: "ひかりのかけら",
+        desc: "ボルおじのひかりに似た、ほのかに光る結晶。",
+        rarity: "uncommon"
+      },
+      lab_note: {
+        id: "lab_note",
+        name: "ミニたちのメモ",
+        desc: "おちび語でびっしり書かれた、謎の実験メモ。読めるのはかあさまだけ……かも？",
+        rarity: "rare"
+      },
+      safety_goggles: {
+        id: "safety_goggles",
+        name: "おちび用安全ゴーグル",
+        desc: "サイズはぴったり。でもかけるとちょっとドヤ顔になる。",
+        rarity: "uncommon"
+      },
+      burn_mark_sample: {
+        id: "burn_mark_sample",
+        name: "こげあとサンプル",
+        desc: "小爆発の跡をそっと削り取ったもの。なぜか嬉しそうに集めている。",
+        rarity: "uncommon"
+      },
+      wanwan_fur: {
+        id: "wanwan_fur",
+        name: "わんわんの毛",
+        desc: "ふわふわであったかい毛束。おちびたちのベッド素材候補。",
+        rarity: "uncommon"
+      },
+      secret_fragment: {
+        id: "secret_fragment",
+        name: "ひみつのかけら",
+        desc: "正体不明の結晶。ミニたちも、かあさまもまだ使い道がわからない。",
+        rarity: "rare"
+      }
+    };
+
+    const JOB_POOLS = {
+      standard: ["charm_bone", "ribbon_mini", "snack_crumb", "safety_goggles"],
+      focus: [
+        "charm_bone",
+        "ribbon_mini",
+        "snack_crumb",
+        "barrier_seed",
+        "light_fragment",
+        "lab_note",
+        "safety_goggles",
+        "burn_mark_sample"
+      ],
+      short: ["snack_crumb", "ribbon_mini"]
+    };
+
+    const RARE_ITEM_IDS = ["lab_note", "secret_fragment"];
+
+    function pickRandomItemIdForJob(jobId) {
+      const pool = JOB_POOLS[jobId] || JOB_POOLS.standard;
+      const index = Math.floor(Math.random() * pool.length);
+      return pool[index];
+    }
+
+    function pickRandomRareItemId() {
+      if (RARE_ITEM_IDS.length === 0) return null;
+      const index = Math.floor(Math.random() * RARE_ITEM_IDS.length);
+      return RARE_ITEM_IDS[index];
+    }
+
+    function getExplosionRareChance(jobId, helperId) {
+      let chance = 0;
+      if (jobId === "focus") chance += 0.20;
+      if (jobId === "standard") chance += 0.05;
+      if (helperId === "wild") chance += 0.20;
+      if (helperId === "lazy") chance += 0.05;
+      if (helperId === "shy") chance += 0.02;
+      if (jobId === "short") chance -= 0.05;
+
+      if (chance < 0) chance = 0;
+      if (chance > 0.5) chance = 0.5;
+      return chance;
+    }
+
+    // ===== 休憩イベント =====
+    const BREAK_EVENTS_BASE = {
+      mother: {
+        id: "mother",
+        leaderLine: "「かあさまが、そっと様子を見に来てくれたよ。みんな、ちゃんと休憩してる？」",
+        message: "かあさまが静かに部屋を見回り、ミニたちの頭をぽんぽんとなでて回った。",
+        historyText: "休憩中、かあさまが見回りに来て、ミニたちの頭を順番になでていった。"
+      },
+      wanwan: {
+        id: "wanwan",
+        leaderLine: "「わんわんが遊びに来たみたい。かあさまも、少し笑ってくれたら嬉しいな。」",
+        message: "わんわんが尻尾をぶんぶん振りながら駆け回り、おちびたちが骨を見せびらかしている。",
+        historyText: "休憩中、わんわんが遊びに来て、ミニたちと少しだけじゃれ合った。"
+      },
+      quiet: {
+        id: "quiet",
+        leaderLine: "「今日は静かな休憩だね。かあさま、深呼吸してみよう。」",
+        message: "特別な出来事はないけれど、静かで落ち着いた時間が流れている。",
+        historyText: "休憩中、特別な出来事はなかったが、静かで穏やかな時間が流れた。"
+      },
+      wildMess: {
+        id: "wildMess",
+        leaderLine: "「むてっぽうおちび……休憩中くらいは静かにしてくれると助かるんだけどね。」",
+        message: "むてっぽうおちびがわんわんと全力で走り回り、机の上の紙が何枚か舞い上がった。",
+        historyText: "休憩中、むてっぽうおちびがはしゃぎすぎて、書類が少し散らばってしまった。"
+      }
+    };
+
+    function pickBreakEvent(helper) {
+      const pool = [];
+      const add = (ev, w) => { for (let i = 0; i < w; i++) pool.push(ev); };
+
+      add(BREAK_EVENTS_BASE.mother, 3);
+      add(BREAK_EVENTS_BASE.wanwan, 2);
+      add(BREAK_EVENTS_BASE.quiet, 3);
+      if (helper.id === "wild") {
+        add(BREAK_EVENTS_BASE.wildMess, 3);
+      } else {
+        add(BREAK_EVENTS_BASE.wildMess, 1);
+      }
+
+      if (pool.length === 0) return null;
+      const index = Math.floor(Math.random() * pool.length);
+      return pool[index];
+    }
+
+    // ===== 研究ポイント & テーマ定義 =====
+    let researchPoints = 0;
+    const researchUnlocks = new Set();
+
+    const RESEARCH_TOPICS = {
+      basic1: {
+        id: "basic1",
+        name: "工房基礎研究 I",
+        cost: 3,
+        leaderLine: "おちびたちと手順書を見直してみたよ。少しだけ、失敗が減るはず。",
+        miniLine: "かた、かたかた！（紙をふっている）"
+      },
+      safety1: {
+        id: "safety1",
+        name: "安全管理研究 I",
+        cost: 3,
+        leaderLine: "安全ゴーグルと手袋を増やしたよ。これで、小爆発の回数は減る……はず。",
+        miniLine: "ぴぴっ（ゴーグルカチカチ）"
+      },
+      efficiency1: {
+        id: "efficiency1",
+        name: "工房効率アップ I",
+        cost: 4,
+        leaderLine: "素材の組み合わせを増やしてみたよ。これからは、見慣れないものも出てくるかも。",
+        miniLine: "かたかた…！（メモを書き足している）"
+      },
+      reckless1: {
+        id: "reckless1",
+        name: "むてっぽう挙動研究 I",
+        cost: 2,
+        leaderLine: "……むてっぽうおちびの様子を観察してみたんだけどね。良くも悪くも、さらに極端になったよ。",
+        miniLine: "ぴぎゃっ！（机からジャンプ）"
+      }
+    };
+
+    function applyResearchEffects(id) {
+      if (id === "basic1") {
+        // 全ヘルパーのsuccessRateを+5%
+        Object.values(HELPERS).forEach(h => {
+          h.successRate = Math.min(h.successRate + 0.05, 0.98);
+        });
+      } else if (id === "safety1") {
+        // 全ヘルパーのexplosionRateを少し下げる
+        Object.values(HELPERS).forEach(h => {
+          h.explosionRate = Math.max(h.explosionRate - 0.04, 0);
+        });
+      } else if (id === "efficiency1") {
+        // 標準＆集中に新アイテムを追加
+        if (!JOB_POOLS.standard.includes("wanwan_fur")) {
+          JOB_POOLS.standard.push("wanwan_fur");
+        }
+        if (!JOB_POOLS.standard.includes("secret_fragment")) {
+          JOB_POOLS.standard.push("secret_fragment");
+        }
+        if (!JOB_POOLS.focus.includes("wanwan_fur")) {
+          JOB_POOLS.focus.push("wanwan_fur");
+        }
+        if (!JOB_POOLS.focus.includes("secret_fragment")) {
+          JOB_POOLS.focus.push("secret_fragment");
+        }
+      } else if (id === "reckless1") {
+        // むてっぽうおちびだけ、ハイリスク・ハイリターン寄りに
+        const wild = HELPERS.wild;
+        if (wild) {
+          wild.successRate = Math.min(wild.successRate + 0.05, 0.99);
+          wild.explosionRate = Math.min(wild.explosionRate + 0.05, 0.7);
+        }
+      }
+    }
+
+    // ===== コンプリ用状態 & 履歴 =====
+    const discoveredItemIds = new Set();
+    const historyLogs = []; // { timeStr, jobLabel, helperName, outcome, itemId, detail }
+
+    const collectionListEl = document.getElementById("collectionList");
+    const historyListEl = document.getElementById("historyList");
+    const researchPointsStatusEl = document.getElementById("researchPointsStatus");
+    const researchListEl = document.getElementById("researchList");
+
+    function renderArchive() {
+      const allItems = Object.values(ITEM_DEFS);
+      if (allItems.length === 0) {
+        collectionListEl.textContent = "（まだ何も作られていないよ）";
+      } else {
+        const obtainedCount = allItems.filter(i => discoveredItemIds.has(i.id)).length;
+        const totalCount = allItems.length;
+
+        let html = `コンプリ状況：${obtainedCount} / ${totalCount} 個 入手済み<br><br>`;
+        allItems.forEach(item => {
+          const has = discoveredItemIds.has(item.id);
+          html += `<div class="collection-item">` +
+            `<span class="name">${item.name}</span>` +
+            `<span class="state">[${has ? "入手済み" : "未入手"}]</span><br>` +
+            `<span>${has ? item.desc : "まだ工房では作られていないみたい。"}</span>` +
+            `</div>`;
+        });
+        collectionListEl.innerHTML = html;
+      }
+
+      if (historyLogs.length === 0) {
+        historyListEl.textContent = "（まだ履歴はないよ）";
+      } else {
+        const recent = historyLogs.slice(-40).reverse();
+        let html = "";
+        recent.forEach(log => {
+          html += `<div class="history-entry">` +
+            `[${log.timeStr}] ${log.jobLabel}（担当：${log.helperName}） → ${log.detail}` +
+            `</div>`;
+        });
+        historyListEl.innerHTML = html;
+      }
+    }
+
+    function addHistoryEntry(jobLabel, helper, outcome, itemId, extraDetail) {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, "0");
+      const m = String(now.getMinutes()).padStart(2, "0");
+      const timeStr = `${h}:${m}`;
+
+      let detail = "";
+
+      if (extraDetail) {
+        detail = extraDetail;
+      } else if (outcome === "success" && itemId) {
+        const item = ITEM_DEFS[itemId];
+        detail = `成功！『${item.name}』が完成した。`;
+      } else if (outcome === "fail") {
+        detail = "うまくいかなかった……材料だけが静かに散らばっている。";
+      } else if (outcome === "explosion" && itemId) {
+        const item = ITEM_DEFS[itemId];
+        detail = `小爆発！ しかし、煙が晴れると『${item.name}』だけが不思議に残っていた。`;
+      } else if (outcome === "explosion") {
+        detail = "小爆発！ 部屋がちょっと焦げくさくなった。あとで片付けよう。";
+      } else if (outcome === "break") {
+        detail = "休憩イベント。";
+      } else {
+        detail = "結果不明。";
+      }
+
+      historyLogs.push({
+        timeStr,
+        jobLabel,
+        helperName: helper.name,
+        outcome,
+        itemId: itemId || null,
+        detail
+      });
+    }
+
+    function updateResearchUI() {
+      if (!researchPointsStatusEl || !researchListEl) return;
+
+      researchPointsStatusEl.textContent = `現在の研究ポイント：${researchPoints} RP`;
+
+      const topics = Object.values(RESEARCH_TOPICS);
+      if (topics.length === 0) {
+        researchListEl.textContent = "（研究テーマが設定されていないよ）";
+        return;
+      }
+
+      let html = "";
+      topics.forEach(topic => {
+        const unlocked = researchUnlocks.has(topic.id);
+        let stateLabel;
+        if (unlocked) {
+          stateLabel = "研究済み";
+        } else if (researchPoints >= topic.cost) {
+          stateLabel = "研究可能";
+        } else {
+          stateLabel = "RP不足";
+        }
+
+        const disabledAttr = (!unlocked && researchPoints >= topic.cost) ? "" : "disabled";
+
+        html += `<div class="history-entry">` +
+          `<div><span class="name">${topic.name}</span>（必要RP：${topic.cost}）</div>` +
+          `<div>状態：${stateLabel}</div>` +
+          `<div>リーダー：「${topic.leaderLine}」<br>おちび：「${topic.miniLine}」</div>` +
+          `<button class="btn sub research-btn" data-research-id="${topic.id}" ${disabledAttr}>` +
+          `${unlocked ? "研究済み" : "研究する"}` +
+          `</button>` +
+          `</div>`;
+      });
+
+      researchListEl.innerHTML = html;
+    }
+
+    if (researchListEl) {
+      researchListEl.addEventListener("click", (e) => {
+        const btn = e.target.closest(".research-btn");
+        if (!btn) return;
+        const id = btn.dataset.researchId;
+        handleResearchClick(id);
+      });
+    }
+
+    // ===== ポモドーロ＋おしごと／休憩管理 =====
+    const leaderMessage = document.getElementById("leaderMessage");
+    const jobStatus = document.getElementById("jobStatus");
+    const helperStatus = document.getElementById("helperStatus");
+    const timerStatus = document.getElementById("timerStatus");
+    const phaseExtraStatus = document.getElementById("phaseExtraStatus");
+    const cancelJobBtn = document.getElementById("cancelJobBtn");
+    const jobButtons = document.querySelectorAll(".job-btn");
+
+    const BREAK_SECONDS = 5 * 60;
+
+    let phase = "idle"; // "idle" | "work" | "break"
+    let currentJobLabel = null;
+    let currentJobId = null;
+    let remainingSeconds = 0;
+    let timerId = null;
+    let isRunning = false;
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    }
+
+    function updateUI() {
+      if (!isRunning || phase === "idle") {
+        jobStatus.textContent = "今の作業：なし";
+        helperStatus.textContent = "今回の担当：なし";
+        timerStatus.textContent = "タイマー停止中。工房でおしごとを選ぶと始まるよ。";
+        phaseExtraStatus.textContent = "";
+        cancelJobBtn.disabled = true;
+        return;
+      }
+
+      const helper = currentHelperForJob || getCurrentHelper();
+
+      if (phase === "work") {
+        jobStatus.textContent = `今の作業：${currentJobLabel}`;
+        helperStatus.textContent = `今回の担当：${helper.name}`;
+        timerStatus.textContent = `おしごと中：${formatTime(remainingSeconds)}`;
+        cancelJobBtn.disabled = false;
+      } else if (phase === "break") {
+        jobStatus.textContent = `今の作業：${currentJobLabel}（おしごと完了）`;
+        helperStatus.textContent = `今回の担当：${helper.name}`;
+        timerStatus.textContent = `休憩中：${formatTime(remainingSeconds)}`;
+        cancelJobBtn.disabled = false;
+      }
+    }
+
+    function resolveJobResult() {
+      const helper = currentHelperForJob || getCurrentHelper();
+      const jobId = currentJobId || "standard";
+      const baseSuccess = helper.successRate;
+      const baseExplosion = helper.explosionRate;
+
+      const r = Math.random();
+      let outcome;
+      if (r < baseExplosion) {
+        outcome = "explosion";
+      } else if (r < baseExplosion + baseSuccess) {
+        outcome = "success";
+      } else {
+        outcome = "fail";
+      }
+
+      let itemId = null;
+      let rareFromExplosion = false;
+
+      if (outcome === "success") {
+        itemId = pickRandomItemIdForJob(jobId);
+        if (itemId) {
+          discoveredItemIds.add(itemId);
+        }
+      } else if (outcome === "explosion") {
+        const rareChance = getExplosionRareChance(jobId, helper.id);
+        if (Math.random() < rareChance) {
+          const rareId = pickRandomRareItemId();
+          if (rareId) {
+            itemId = rareId;
+            discoveredItemIds.add(rareId);
+            rareFromExplosion = true;
+          }
+        }
+      }
+
+      // 研究ポイント加算：成功で+1、成功でレアならさらに+1、爆発からのレア産物で+1
+      let gainedRP = 0;
+      if (outcome === "success") {
+        gainedRP += 1;
+        if (itemId && RARE_ITEM_IDS.includes(itemId)) {
+          gainedRP += 1;
+        }
+      } else if (outcome === "explosion" && rareFromExplosion && itemId && RARE_ITEM_IDS.includes(itemId)) {
+        gainedRP += 1;
+      }
+      if (gainedRP > 0) {
+        researchPoints += gainedRP;
+        addHistoryEntry(
+          currentJobLabel + "・研究ポイント",
+          helper,
+          "research",
+          null,
+          `研究ポイントを ${gainedRP} 獲得（合計：${researchPoints} RP）。`
+        );
+        updateResearchUI();
+      }
+
+      if (outcome === "success" && itemId) {
+        const item = ITEM_DEFS[itemId];
+        leaderMessage.textContent =
+          `「かあさま、おしごと成功だよ。『${item.name}』がちゃんと形になってくれた。」`;
+      } else if (outcome === "fail") {
+        leaderMessage.textContent =
+          "「……今回はうまくいかなかったみたい。次は、もう少しだけ条件を変えてみようか。」";
+      } else if (outcome === "explosion" && rareFromExplosion && itemId) {
+        const item = ITEM_DEFS[itemId];
+        leaderMessage.textContent =
+          `「わっ……！ 小爆発だったけど、かあさま見て。『${item.name}』が残ってくれたよ。」`;
+      } else if (outcome === "explosion") {
+        leaderMessage.textContent =
+          "「わっ……！ 小爆発だ。かあさま、ケガはない？ お片付けはぼくとおちびたちに任せて。」";
+      }
+
+      addHistoryEntry(currentJobLabel, helper, outcome, itemId);
+    }
+
+    function startBreakPhase() {
+      const helper = currentHelperForJob || getCurrentHelper();
+      phase = "break";
+      isRunning = true;
+      remainingSeconds = BREAK_SECONDS;
+
+      const ev = pickBreakEvent(helper);
+      if (ev) {
+        leaderMessage.textContent = ev.leaderLine;
+        phaseExtraStatus.textContent = ev.message;
+        addHistoryEntry(currentJobLabel + "・休憩", helper, "break", null, ev.historyText);
+      } else {
+        phaseExtraStatus.textContent = "「かあさま、少し肩を回したり、お水のんだりしよ。」";
+      }
+
+      updateUI();
+    }
+
+    function finishBreakPhase() {
+      const helper = currentHelperForJob || getCurrentHelper();
+      phase = "idle";
+      isRunning = false;
+      remainingSeconds = 0;
+
+      leaderMessage.textContent =
+        "「かあさま、休憩おつかれさま。次はどんなおしごとにする？」";
+      phaseExtraStatus.textContent = "";
+
+      jobButtons.forEach(btn => {
+        btn.disabled = false;
+      });
+      cancelJobBtn.disabled = true;
+      currentHelperForJob = null;
+
+      updateUI();
+      renderArchive();
+    }
+
+    function tick() {
+      if (!isRunning || phase === "idle") return;
+
+      if (remainingSeconds > 0) {
+        remainingSeconds -= 1;
+        updateUI();
+        return;
+      }
+
+      // 残り0になった瞬間の処理
+      clearInterval(timerId);
+      timerId = null;
+
+      if (phase === "work") {
+        // ✅ 作業終了時にピピピ
+        playBeepPattern();
+        // おしごと結果判定 → そのあと休憩へ
+        resolveJobResult();
+        startBreakPhase();
+        // 新しいタイマーとして休憩用カウント開始
+        timerId = setInterval(tick, 1000);
+      } else if (phase === "break") {
+        // ✅ 休憩終了時にピピピ
+        playBeepPattern();
+        finishBreakPhase();
+      }
+    }
+
+    function startJob(jobId, minutes, label) {
+      // iPhoneの「ユーザー操作起点」確保のため
+      initAudioCtx();
+
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+      }
+
+      const helper = getCurrentHelper();
+      currentHelperForJob = helper;
+
+      currentJobId = jobId;
+      currentJobLabel = label;
+      remainingSeconds = Math.floor(minutes * 60);
+      phase = "work";
+      isRunning = true;
+
+      leaderMessage.textContent = helper.startLine;
+      jobStatus.textContent = `今の作業：${label}`;
+      helperStatus.textContent = `今回の担当：${helper.name}`;
+      timerStatus.textContent = `おしごと中：${formatTime(remainingSeconds)}`;
+      phaseExtraStatus.textContent = "";
+
+      factoryStatus.textContent =
+        `『${label}』を、${helper.name}と一緒に始めたよ。ホームからも進捗を確認できるよ。`;
+
+      jobButtons.forEach(btn => {
+        btn.disabled = true;
+      });
+      cancelJobBtn.disabled = false;
+
+      timerId = setInterval(tick, 1000);
+      updateUI();
+    }
+
+    function cancelJob() {
+      if (!isRunning || phase === "idle") return;
+      isRunning = false;
+      phase = "idle";
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+      }
+      const helper = currentHelperForJob || getCurrentHelper();
+      leaderMessage.textContent = "「……大丈夫？無理しなくていいよ、かあさま。」";
+      jobStatus.textContent = `今の作業：キャンセル（${currentJobLabel ?? "不明"}）`;
+      helperStatus.textContent = `担当していたおちび：${helper.name}`;
+      timerStatus.textContent = "タイマー停止中。またやりたくなったら工房から選んでね。";
+      phaseExtraStatus.textContent = "";
+
+      jobButtons.forEach(btn => {
+        btn.disabled = false;
+      });
+      cancelJobBtn.disabled = true;
+      currentHelperForJob = null;
+    }
+
+    function handleResearchClick(id) {
+      const topic = RESEARCH_TOPICS[id];
+      if (!topic) return;
+      if (researchUnlocks.has(id)) return;
+      if (researchPoints < topic.cost) return;
+
+      researchPoints -= topic.cost;
+      researchUnlocks.add(id);
+      applyResearchEffects(id);
+
+      // 研究完了時のセリフをホームに反映
+      leaderMessage.textContent = `「${topic.leaderLine}」`;
+      phaseExtraStatus.textContent = `おちび：「${topic.miniLine}」`;
+
+      addHistoryEntry(
+        `研究：「${topic.name}」`,
+        HELPERS.auto,
+        "research",
+        null,
+        `研究完了：${topic.name}（RP消費：${topic.cost}）`
+      );
+
+      updateResearchUI();
+    }
+
+    jobButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const minutes = Number(btn.dataset.minutes);
+        const label = btn.dataset.label || "おしごと";
+        const jobId = btn.dataset.jobId || "standard";
+        startJob(jobId, minutes, label);
+      });
+    });
+
+    cancelJobBtn.addEventListener("click", cancelJob);
+
+    // 初期表示
+    (function init() {
+      phase = "idle";
+      isRunning = false;
+      jobStatus.textContent = "今の作業：なし";
+      helperStatus.textContent = "今回の担当：なし";
+      timerStatus.textContent = "タイマー停止中。工房でおしごとを選ぶと始まるよ。";
+      phaseExtraStatus.textContent = "";
+      renderArchive();
+      updateResearchUI();
+    })();
+  </script>
+</body>
+</html>
