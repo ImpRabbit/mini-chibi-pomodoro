@@ -236,7 +236,8 @@
           <div class="progress-fill" id="progressFill"></div>
         </div>
 
-        <div class="status" id="phaseExtraStatus"></div>
+        <div class="status" id="phaseExtraStatus">
+        </div>
 
         <button class="btn sub" id="cancelJobBtn" disabled aria-label="今のおしごとまたは休憩をキャンセル">
           ■ 今のおしごと／休憩をやめる
@@ -281,31 +282,6 @@
         <button class="btn job-btn" data-job-id="short" data-minutes="15" data-label="おためし短時間（15分）" aria-label="おためし短時間（15分）を開始">
           🐾 おためし短時間（15分）
         </button>
-
-        <!-- じゆうじかんおしごと -->
-        <div class="helper-title">じゆうじかんおしごと</div>
-        <div class="status">
-          自分で分数を決めたいときはここから。<br>
-          （だいたい 5〜120分くらいがおすすめだよ）
-        </div>
-
-        <div style="display:flex; gap:0.5rem; align-items:center; margin-top:0.5rem;">
-          <input
-            id="customMinutesInput"
-            type="number"
-            min="5"
-            max="120"
-            step="5"
-            value="25"
-            style="flex:0 0 5rem; padding:0.4rem; border-radius:0.5rem; border:1px solid #444; background:#181820; color:#f9f9ff; text-align:right;"
-          />
-          <span>分</span>
-          <button class="btn sub" id="customJobBtn">
-            ⏱ 自由おしごとをはじめる
-          </button>
-        </div>
-
-        <div class="status" id="customJobStatus"></div>
 
         <div class="helper-title">今回一緒に行くおちび</div>
         <div class="helper-row">
@@ -606,8 +582,7 @@
         "safety_goggles",
         "burn_mark_sample"
       ],
-      short: ["snack_crumb", "ribbon_mini"],
-      custom: ["charm_bone", "ribbon_mini", "snack_crumb", "safety_goggles"]
+      short: ["snack_crumb", "ribbon_mini"]
     };
 
     const RARE_ITEM_IDS = ["lab_note", "secret_fragment"];
@@ -628,10 +603,10 @@
       let chance = 0;
       if (jobId === "focus") chance += 0.20;
       if (jobId === "standard") chance += 0.05;
-      if (jobId === "short") chance -= 0.05;
       if (helperId === "wild") chance += 0.20;
       if (helperId === "lazy") chance += 0.05;
       if (helperId === "shy") chance += 0.02;
+      if (jobId === "short") chance -= 0.05;
 
       if (chance < 0) chance = 0;
       if (chance > 0.5) chance = 0.5;
@@ -884,6 +859,53 @@
       saveData();
     }
 
+    function updateResearchUI() {
+      if (!researchPointsStatusEl || !researchListEl) return;
+
+      researchPointsStatusEl.textContent = `現在の研究ポイント：${researchPoints} RP`;
+
+      const topics = Object.values(RESEARCH_TOPICS);
+      if (topics.length === 0) {
+        researchListEl.textContent = "（研究テーマが設定されていないよ）";
+        return;
+      }
+
+      let html = "";
+      topics.forEach(topic => {
+        const unlocked = researchUnlocks.has(topic.id);
+        let stateLabel;
+        if (unlocked) {
+          stateLabel = "研究済み";
+        } else if (researchPoints >= topic.cost) {
+          stateLabel = "研究可能";
+        } else {
+          stateLabel = "RP不足";
+        }
+
+        const disabledAttr = (!unlocked && researchPoints >= topic.cost) ? "" : "disabled";
+
+        html += `<div class="history-entry">` +
+          `<div><span class="name">${topic.name}</span>（必要RP：${topic.cost}）</div>` +
+          `<div>状態：${stateLabel}</div>` +
+          `<div>リーダー：「${topic.leaderLine}」<br>おちび：「${topic.miniLine}」</div>` +
+          `<button class="btn sub research-btn" data-research-id="${topic.id}" ${disabledAttr}>` +
+          `${unlocked ? "研究済み" : "研究する"}` +
+          `</button>` +
+          `</div>`;
+      });
+
+      researchListEl.innerHTML = html;
+    }
+
+    if (researchListEl) {
+      researchListEl.addEventListener("click", (e) => {
+        const btn = e.target.closest(".research-btn");
+        if (!btn) return;
+        const id = btn.dataset.researchId;
+        handleResearchClick(id);
+      });
+    }
+
     // ===== ポモドーロ＋おしごと／休憩管理 =====
     const leaderMessage = document.getElementById("leaderMessage");
     const jobStatus = document.getElementById("jobStatus");
@@ -910,30 +932,6 @@
       const m = Math.floor(sec / 60);
       const s = sec % 60;
       return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-    }
-
-    // ===== じゆうじかんおしごと =====
-    const customMinutesInput = document.getElementById("customMinutesInput");
-    const customJobBtn = document.getElementById("customJobBtn");
-    const customJobStatus = document.getElementById("customJobStatus");
-
-    if (customJobBtn && customMinutesInput && customJobStatus) {
-      customJobBtn.addEventListener("click", () => {
-        const v = Number(customMinutesInput.value);
-
-        if (Number.isNaN(v)) {
-          customJobStatus.textContent = "数字を入れてね。";
-          return;
-        }
-        if (v < 5 || v > 120) {
-          customJobStatus.textContent = "5〜120分のあいだでお願いね。";
-          return;
-        }
-
-        const label = `じゆうじかんおしごと（${v}分）`;
-        startJob("custom", v, label);
-        customJobStatus.textContent = `『${label}』をはじめたよ。`;
-      });
     }
 
     function updateUI() {
@@ -1200,6 +1198,7 @@
       cancelJobBtn.disabled = true;
       currentHelperForJob = null;
 
+      // キャンセルも履歴に残したい場合はここで追記
       addHistoryEntry(
         currentJobLabel || "不明なおしごと",
         helper,
@@ -1235,15 +1234,6 @@
       saveData();
     }
 
-    if (researchListEl) {
-      researchListEl.addEventListener("click", (e) => {
-        const btn = e.target.closest(".research-btn");
-        if (!btn) return;
-        const id = btn.dataset.researchId;
-        handleResearchClick(id);
-      });
-    }
-
     jobButtons.forEach(btn => {
       btn.addEventListener("click", () => {
         const minutes = Number(btn.dataset.minutes);
@@ -1260,6 +1250,7 @@
       phase = "idle";
       isRunning = false;
 
+      // セーブデータ読み込み
       loadData();
 
       jobStatus.textContent = "今の作業：なし";
