@@ -283,6 +283,30 @@
           🐾 おためし短時間（15分）
         </button>
 
+<div class="helper-title">じゆうじかんおしごと</div>
+<div class="status">
+  自分で分数を決めたいときはここから。<br>
+  （だいたい 5〜120分くらいがおすすめだよ）
+</div>
+
+<div style="display:flex; gap:0.5rem; align-items:center; margin-top:0.5rem;">
+  <input
+    id="customMinutesInput"
+    type="number"
+    min="5"
+    max="120"
+    step="5"
+    value="25"
+    style="flex:0 0 5rem; padding:0.4rem; border-radius:0.5rem; border:1px solid #444; background:#181820; color:#f9f9ff; text-align:right;"
+  />
+  <span>分</span>
+  <button class="btn sub" id="customJobBtn">
+    ⏱ 自由おしごとをはじめる
+  </button>
+</div>
+
+<div class="status" id="customJobStatus"></div>
+
         <div class="helper-title">今回一緒に行くおちび</div>
         <div class="helper-row">
           <button class="chip helper-btn active" data-helper-id="auto" aria-label="おまかせ編成を選択">
@@ -584,6 +608,8 @@
       ],
       short: ["snack_crumb", "ribbon_mini"]
     };
+custom: ["charm_bone", "ribbon_mini", "snack_crumb", "safety_goggles"]
+
 
     const RARE_ITEM_IDS = ["lab_note", "secret_fragment"];
 
@@ -917,6 +943,30 @@
 
     const progressBar = document.getElementById("progressBar");
     const progressFill = document.getElementById("progressFill");
+
+// ===== じゆうじかんおしごと =====
+const customMinutesInput = document.getElementById("customMinutesInput");
+const customJobBtn = document.getElementById("customJobBtn");
+const customJobStatus = document.getElementById("customJobStatus");
+
+if (customJobBtn && customMinutesInput && customJobStatus) {
+  customJobBtn.addEventListener("click", () => {
+    const v = Number(customMinutesInput.value);
+
+    if (Number.isNaN(v)) {
+      customJobStatus.textContent = "数字を入れてね。";
+      return;
+    }
+    if (v < 5 || v > 120) {
+      customJobStatus.textContent = "5〜120分のあいだでお願いね。";
+      return;
+    }
+
+    const label = `じゆうじかんおしごと（${v}分）`;
+    startJob("custom", v, label);
+    customJobStatus.textContent = `『${label}』をはじめたよ。`;
+  });
+}
 
     const BREAK_SECONDS = 5 * 60;
 
