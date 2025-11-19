@@ -1303,6 +1303,8 @@ if (customJobBtn && customMinutesInput && customJobStatus) {
       // セーブデータ読み込み
       loadData();
 
+researchUnlocks.forEach(id => applyResearchEffects(id));
+
       jobStatus.textContent = "今の作業：なし";
       helperStatus.textContent = "今回の担当：なし";
       timerStatus.textContent = "タイマー停止中。工房でおしごとを選ぶと始まるよ。";
